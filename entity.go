@@ -5,11 +5,24 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"io"
 	"time"
+
+	"golang.org/x/crypto/scrypt"
 
 	"github.com/nats-io/nats"
 	"github.com/r3labs/natsdb"
+)
+
+const (
+	// SaltSize is the size of the salt in bits
+	SaltSize = 32
+	// HashSize is the size of the hash in bits
+	HashSize = 64
 )
 
 // Entity : the database mapped entity
@@ -98,7 +111,7 @@ func (e *Entity) LoadFromInputOrFail(msg *nats.Msg, h *natsdb.Handler) bool {
 }
 
 // Update : It will update the current entity with the input []byte
-func (e *Entity) Update(body []byte) {
+func (e *Entity) Update(body []byte) error {
 	e.MapInput(body)
 	stored := Entity{}
 	db.First(&stored, e.ID)
@@ -106,14 +119,35 @@ func (e *Entity) Update(body []byte) {
 
 	db.Save(&stored)
 	e = &stored
+
+	return nil
 }
 
 // Delete : Will delete from database the current Entity
-func (e *Entity) Delete() {
+func (e *Entity) Delete() error {
 	db.Unscoped().Delete(&e)
+
+	return nil
 }
 
 // Save : Persists current entity on database
-func (e *Entity) Save() {
+func (e *Entity) Save() error {
+	salt := make([]byte, SaltSize)
+	_, err := io.ReadFull(rand.Reader, salt)
+	if err != nil {
+		return fmt.Errorf(`{"error": "%s"}`, err.Error())
+	}
+
+	hash, err := scrypt.Key([]byte(e.Password), salt, 16384, 8, 1, HashSize)
+	if err != nil {
+		return fmt.Errorf(`{"error": "%s"}`, err.Error())
+	}
+
+	// Create a base64 string of the binary salt and hash for storage
+	e.Salt = base64.StdEncoding.EncodeToString(salt)
+	e.Password = base64.StdEncoding.EncodeToString(hash)
+
 	db.Save(&e)
+
+	return nil
 }
