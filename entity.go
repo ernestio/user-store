@@ -48,6 +48,17 @@ func (Entity) TableName() string {
 // will perform a search on the database
 func (e *Entity) Find() []interface{} {
 	entities := []Entity{}
+
+	if e.Username != "" && e.GroupID != 0 {
+		db.Where("username = ?", e.Username).Where("group_id = ?", e.GroupID).Find(&entities)
+	} else {
+		if e.Username != "" {
+			db.Where("username = ?", e.Username).Find(&entities)
+		} else if e.GroupID != 0 {
+			db.Where("group_id = ?", e.GroupID).Find(&entities)
+		}
+	}
+
 	db.Find(&entities)
 
 	list := make([]interface{}, len(entities))
