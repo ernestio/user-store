@@ -7,4 +7,4 @@ WORKDIR /go/src/github.com/ernestio/user-store
 
 RUN make deps && go install
 
-ENTRYPOINT /go/bin/user-store
+ENTRYPOINT ./entrypoint.sh
