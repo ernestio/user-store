@@ -127,10 +127,8 @@ func (e *Entity) Update(body []byte) error {
 	stored := Entity{}
 	db.First(&stored, e.ID)
 	stored.Username = e.Username
-
-	db.Save(&stored)
-	e = &stored
-
+	stored.Password = e.Password
+	stored.Save()
 	return nil
 }
 
