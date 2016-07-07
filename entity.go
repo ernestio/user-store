@@ -49,9 +49,6 @@ func (Entity) TableName() string {
 func (e *Entity) Find() []interface{} {
 	entities := []Entity{}
 
-	fmt.Println("--", e.Username, "--")
-	fmt.Println("--", e.GroupID, "--")
-
 	if e.Username != "" && e.GroupID != 0 {
 		db.Where("username = ?", e.Username).Where("group_id = ?", e.GroupID).Find(&entities)
 	} else {
