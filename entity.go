@@ -54,13 +54,11 @@ func (e *Entity) Find() []interface{} {
 	} else {
 		if e.Username != "" {
 			db.Where("username = ?", e.Username).Find(&entities)
+		} else if e.GroupID == 0 {
+			db.Find(&entities)
 		} else if e.GroupID != 0 {
 			db.Where("group_id = ?", e.GroupID).Find(&entities)
 		}
-	}
-
-	if e.GroupID == 0 {
-		db.Find(&entities)
 	}
 
 	list := make([]interface{}, len(entities))
