@@ -59,7 +59,11 @@ func (e *Entity) Find() []interface{} {
 		}
 	}
 
-	db.Find(&entities)
+	if e.GroupID != 0 {
+		db.Where("group_id = ?", e.GroupID).Find(&entities)
+	} else {
+		db.Find(&entities)
+	}
 
 	list := make([]interface{}, len(entities))
 	for i, s := range entities {
