@@ -126,8 +126,11 @@ func (e *Entity) Update(body []byte) error {
 	e.MapInput(body)
 	stored := Entity{}
 	db.First(&stored, e.ID)
+	stored.GroupID = e.GroupID
 	stored.Username = e.Username
-	stored.Password = e.Password
+	if e.Password != "" {
+		stored.Password = e.Password
+	}
 	stored.Save()
 	return nil
 }
