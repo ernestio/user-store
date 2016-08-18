@@ -123,12 +123,17 @@ func (e *Entity) LoadFromInputOrFail(msg *nats.Msg, h *natsdb.Handler) bool {
 
 // Update : It will update the current entity with the input []byte
 func (e *Entity) Update(body []byte) error {
-	e.MapInput(body)
-	stored := Entity{}
-	db.First(&stored, e.ID)
-	stored.Username = e.Username
-	stored.Password = e.Password
-	stored.Save()
+	input := Entity{}
+	json.Unmarshal(body, &input)
+	e.GroupID = input.GroupID
+	e.Username = input.Username
+
+	if input.Password != "" {
+		e.Password = input.Password
+		e.Save()
+	} else {
+		db.Save(e)
+	}
 	return nil
 }
 
@@ -147,14 +152,16 @@ func (e *Entity) Save() error {
 		return fmt.Errorf(`{"error": "%s"}`, err.Error())
 	}
 
-	hash, err := scrypt.Key([]byte(e.Password), salt, 16384, 8, 1, HashSize)
-	if err != nil {
-		return fmt.Errorf(`{"error": "%s"}`, err.Error())
-	}
+	if e.Password != "" {
+		hash, err := scrypt.Key([]byte(e.Password), salt, 16384, 8, 1, HashSize)
+		if err != nil {
+			return fmt.Errorf(`{"error": "%s"}`, err.Error())
+		}
 
-	// Create a base64 string of the binary salt and hash for storage
-	e.Salt = base64.StdEncoding.EncodeToString(salt)
-	e.Password = base64.StdEncoding.EncodeToString(hash)
+		// Create a base64 string of the binary salt and hash for storage
+		e.Salt = base64.StdEncoding.EncodeToString(salt)
+		e.Password = base64.StdEncoding.EncodeToString(hash)
+	}
 
 	db.Save(&e)
 
