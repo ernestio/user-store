@@ -3,14 +3,19 @@ machine:
     - docker
   environment:
     NATS_URI:  nats://127.0.0.1:4222
+    ROOTPATH: /home/ubuntu/.go_workspace/src/github.com/ernestio
 
 dependencies:
   override:
     - echo "CREATE DATABASE users;" | psql -U postgres
     - docker run -d -p 4222:4222 nats
     - make deps
+    - mkdir -p $ROOTPATH/
+    - rm -rf $ROOTPATH/toolset/ && git clone git@github.com:ernestio/toolset.git $ROOTPATH/toolset/
+    - cd $ROOTPATH/toolset/ernestci/ && bundle install
 
 test:
   override:
     - make test
+    - ruby $ROOTPATH/toolset/ernestci/run.rb .ernest-ci
     - make lint
