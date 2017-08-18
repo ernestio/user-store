@@ -8,6 +8,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -34,6 +35,7 @@ type Entity struct {
 	Email     string `json:"email"`
 	Salt      string `json:"salt"`
 	Admin     bool   `json:"admin"`
+	Type      string `json:"type"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt *time.Time `json:"-" sql:"index"`
@@ -104,6 +106,7 @@ func (e *Entity) LoadFromInput(msg []byte) bool {
 	e.Password = stored.Password
 	e.Salt = stored.Salt
 	e.Admin = stored.Admin
+	e.Type = stored.Type
 
 	return true
 }
@@ -127,6 +130,10 @@ func (e *Entity) Update(body []byte) error {
 	json.Unmarshal(body, &input)
 	e.GroupID = input.GroupID
 	e.Username = input.Username
+
+	if e.Type != "local" {
+		return errors.New(`{"error": "user is not local"}`)
+	}
 
 	if input.Password != "" {
 		e.Password = input.Password
