@@ -32,10 +32,10 @@ type Entity struct {
 	GroupID   uint   `json:"group_id" gorm:"unique_index:idx_per_group"`
 	Username  string `json:"username" gorm:"unique_index:idx_per_group"`
 	Password  string `json:"password"`
+	Type      string `json:"type"`
 	Email     string `json:"email"`
 	Salt      string `json:"salt"`
 	Admin     bool   `json:"admin"`
-	Type      string `json:"type"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt *time.Time `json:"-" sql:"index"`
@@ -126,14 +126,14 @@ func (e *Entity) LoadFromInputOrFail(msg *nats.Msg, h *natsdb.Handler) bool {
 
 // Update : It will update the current entity with the input []byte
 func (e *Entity) Update(body []byte) error {
+	if e.Type != "local" {
+		return errors.New(`{"error": "user is not local"}`)
+	}
+
 	input := Entity{}
 	json.Unmarshal(body, &input)
 	e.GroupID = input.GroupID
 	e.Username = input.Username
-
-	if e.Type != "local" {
-		return errors.New(`{"error": "user is not local"}`)
-	}
 
 	if input.Password != "" {
 		e.Password = input.Password
