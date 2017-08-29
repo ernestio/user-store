@@ -16,7 +16,7 @@ func createEntities(n int) {
 	i := 0
 	for i < n {
 		x := strconv.Itoa(i)
-		db.Create(&Entity{Username: "Test" + x})
+		db.Create(&Entity{Username: "Test" + x, Type: "local"})
 		i++
 	}
 }

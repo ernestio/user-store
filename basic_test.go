@@ -28,7 +28,7 @@ func TestGetHandler(t *testing.T) {
 		Convey("Given the username does not exist on the database", func() {
 			msg, err := n.Request("user.get", []byte(`{"id":"32"}`), time.Second)
 			So(string(msg.Data), ShouldEqual, string(handler.NotFoundErrorMessage))
-			So(err, ShouldEqual, nil)
+			So(err, ShouldBeNil)
 		})
 
 		Convey("Given the user exists on the database", func() {
@@ -43,8 +43,9 @@ func TestGetHandler(t *testing.T) {
 			So(output.ID, ShouldEqual, e.ID)
 			So(output.GroupID, ShouldEqual, e.GroupID)
 			So(output.Username, ShouldEqual, e.Username)
+			So(output.Type, ShouldEqual, e.Type)
 			So(output.Password, ShouldEqual, e.Password)
-			So(err, ShouldEqual, nil)
+			So(err, ShouldBeNil)
 		})
 
 		Convey("Given the user exists on the database and searching by name", func() {
@@ -59,7 +60,8 @@ func TestGetHandler(t *testing.T) {
 			So(output.GroupID, ShouldEqual, e.GroupID)
 			So(output.Username, ShouldEqual, e.Username)
 			So(output.Password, ShouldEqual, e.Password)
-			So(err, ShouldEqual, nil)
+			So(output.Type, ShouldEqual, e.Type)
+			So(err, ShouldBeNil)
 		})
 	})
 
@@ -68,7 +70,7 @@ func TestGetHandler(t *testing.T) {
 		Convey("Given the user does not exist on the database", func() {
 			msg, err := n.Request("user.del", []byte(`{"id":32}`), time.Second)
 			So(string(msg.Data), ShouldEqual, string(handler.NotFoundErrorMessage))
-			So(err, ShouldEqual, nil)
+			So(err, ShouldBeNil)
 		})
 
 		Convey("Given the user exists on the database", func() {
@@ -79,7 +81,7 @@ func TestGetHandler(t *testing.T) {
 
 			msg, err := n.Request("user.del", []byte(`{"id":`+id+`}`), time.Second)
 			So(string(msg.Data), ShouldEqual, string(handler.DeletedMessage))
-			So(err, ShouldEqual, nil)
+			So(err, ShouldBeNil)
 
 			deleted := Entity{}
 			db.First(&deleted, id)
@@ -94,9 +96,9 @@ func TestGetHandler(t *testing.T) {
 				msg, err := n.Request("user.set", []byte(`{"username":"fred"}`), time.Second)
 				output := Entity{}
 				output.LoadFromInput(msg.Data)
-				So(output.ID, ShouldNotEqual, nil)
+				So(output.ID, ShouldNotBeNil)
 				So(output.Username, ShouldEqual, "fred")
-				So(err, ShouldEqual, nil)
+				So(err, ShouldBeNil)
 
 				stored := Entity{}
 				db.First(&stored, output.ID)
@@ -108,7 +110,7 @@ func TestGetHandler(t *testing.T) {
 			Convey("Then we should receive a not found message", func() {
 				msg, err := n.Request("user.set", []byte(`{"id": 1000, "username":"fred"}`), time.Second)
 				So(string(msg.Data), ShouldEqual, string(handler.NotFoundErrorMessage))
-				So(err, ShouldEqual, nil)
+				So(err, ShouldBeNil)
 			})
 		})
 
@@ -121,10 +123,10 @@ func TestGetHandler(t *testing.T) {
 				msg, err := n.Request("user.set", []byte(`{"id": `+id+`, "username":"fred", "password":"supu"}`), time.Second)
 				output := Entity{}
 				output.LoadFromInput(msg.Data)
-				So(output.ID, ShouldNotEqual, nil)
+				So(output.ID, ShouldNotBeNil)
 				So(output.Username, ShouldEqual, "fred")
 				pwd := output.Password
-				So(err, ShouldEqual, nil)
+				So(err, ShouldBeNil)
 
 				stored := Entity{}
 				db.First(&stored, output.ID)
