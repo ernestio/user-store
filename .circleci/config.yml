@@ -20,6 +20,7 @@ jobs:
        - run: 
            name: Setup Hosts File
            command: echo 127.0.0.1 ernest.local | sudo tee -a /etc/hosts
+       - run: ps aux
        - run: 
            name: Install Dependencies
            command: |
