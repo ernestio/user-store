@@ -23,8 +23,9 @@ jobs:
        - run: 
            name: Install Dependencies
            command: |
-             docker run --name nats -d -p 4222:4222 nats
              make deps
+             echo "CREATE DATABASE users;" | psql -U postgres
+             docker run --name nats -d -p 4222:4222 nats
        - run: 
            name: Code Analysis
            command: make lint
