@@ -20,14 +20,13 @@ jobs:
        - run: 
            name: Setup Hosts File
            command: echo 127.0.0.1 ernest.local | sudo tee -a /etc/hosts
-#       - run: sudo apt update && sudo apt install postgresql
        - run: 
            name: Install Dependencies
            command: |
              make deps
-             sudo apt update && sudo apt install postgresql
-             echo "CREATE DATABASE users;" | sudo -u postgres psql
-             docker run --name nats -d -p 4222:4222 nats
+             docker run --name nats -d -p 4222:4222 nats:1.0.2
+             docker run --name postgres -d -p 5432:5432 postgres:9.6.5-alpine
+             echo "CREATE DATABASE users;" | psql -U postgres
        - run: 
            name: Code Analysis
            command: make lint
@@ -37,7 +36,7 @@ jobs:
        - run: 
            name: Integration Tests
            command: |
-             docker stop nats
+             docker stop nats postgres
              git clone -b f-circleci-v2-680 git@github.com:ernestio/toolset.git /tmp/toolset/
              cd /tmp/toolset/ernestci/ && bundle install
              ruby /tmp/toolset/ernestci/run.rb $CIRCLE_WORKING_DIRECTORY/.ernest-ci
