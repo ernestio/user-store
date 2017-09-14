@@ -20,12 +20,13 @@ jobs:
        - run: 
            name: Setup Hosts File
            command: echo 127.0.0.1 ernest.local | sudo tee -a /etc/hosts
-       - run: sudo apt update && sudo apt install postgresql
+#       - run: sudo apt update && sudo apt install postgresql
        - run: 
            name: Install Dependencies
            command: |
              make deps
-             echo "CREATE DATABASE users;" | psql -U postgres
+             sudo apt update && sudo apt install postgresql
+             echo "CREATE DATABASE users;" | sudo -u postgres psql
              docker run --name nats -d -p 4222:4222 nats
        - run: 
            name: Code Analysis
