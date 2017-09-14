@@ -20,7 +20,7 @@ jobs:
        - run: 
            name: Setup Hosts File
            command: echo 127.0.0.1 ernest.local | sudo tee -a /etc/hosts
-       - run: dpkg -l | grep -i post && sudo apt update && sudo apt install postgres
+       - run: sudo apt update && sudo apt install postgresql
        - run: 
            name: Install Dependencies
            command: |
