@@ -8,7 +8,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -35,7 +34,7 @@ type Entity struct {
 	Type      string `json:"type"`
 	Email     string `json:"email"`
 	Salt      string `json:"salt"`
-	Admin     bool   `json:"admin"`
+	Admin     *bool  `json:"admin"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt *time.Time `json:"-" sql:"index"`
@@ -126,14 +125,15 @@ func (e *Entity) LoadFromInputOrFail(msg *nats.Msg, h *natsdb.Handler) bool {
 
 // Update : It will update the current entity with the input []byte
 func (e *Entity) Update(body []byte) error {
-	if e.Type != "local" {
-		return errors.New(`{"error": "user is not local"}`)
-	}
-
 	input := Entity{}
 	json.Unmarshal(body, &input)
 	e.GroupID = input.GroupID
 	e.Username = input.Username
+
+	if input.Admin != nil {
+		e.Admin = input.Admin
+		e.Save()
+	}
 
 	if input.Password != "" {
 		e.Password = input.Password
@@ -141,6 +141,7 @@ func (e *Entity) Update(body []byte) error {
 	} else {
 		db.Save(e)
 	}
+
 	return nil
 }
 
