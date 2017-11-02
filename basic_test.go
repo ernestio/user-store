@@ -137,6 +137,37 @@ func TestGetHandler(t *testing.T) {
 				db.First(&stored, output.ID)
 				So(stored.Password, ShouldEqual, pwd)
 			})
+			Convey("When the MFA field is changed from false to true", func() {
+				msg, err := n.Request("user.set", []byte(`{"id": `+id+`, "username":"fred", "password":"supu", "mfa": true}`), time.Second)
+				So(err, ShouldBeNil)
+				Convey("Then I should see a value in the MFASecret & MFASalt fields", func() {
+					output := Entity{}
+					output.LoadFromInput(msg.Data)
+
+					stored := Entity{}
+					db.First(&stored, output.ID)
+
+					So(*stored.MFA, ShouldBeTrue)
+					So(stored.MFASecret, ShouldNotBeBlank)
+					So(stored.MFASalt, ShouldNotBeBlank)
+				})
+			})
+			Convey("When the MFA field is changed from true to false", func() {
+				msg, err := n.Request("user.set", []byte(`{"id": `+id+`, "username":"fred", "password":"supu", "mfa": false}`), time.Second)
+				So(err, ShouldBeNil)
+				Convey("Then I should see a no value in the MFASecret & MFASalt fields", func() {
+					output := Entity{}
+					output.LoadFromInput(msg.Data)
+
+					stored := Entity{}
+					db.First(&stored, output.ID)
+
+					So(*stored.MFA, ShouldBeFalse)
+					So(stored.MFASecret, ShouldBeBlank)
+					So(stored.MFASalt, ShouldBeBlank)
+				})
+			})
+
 		})
 	})
 

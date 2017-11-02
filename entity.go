@@ -6,6 +6,7 @@ package main
 
 import (
 	"crypto/rand"
+	"encoding/base32"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -35,6 +36,9 @@ type Entity struct {
 	Email     string `json:"email"`
 	Salt      string `json:"salt"`
 	Admin     *bool  `json:"admin"`
+	MFA       *bool  `json:"mfa"`
+	MFASecret string `json:"mfa_secret"`
+	MFASalt   string `json:"mfa_salt"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt *time.Time `json:"-" sql:"index"`
@@ -134,6 +138,21 @@ func (e *Entity) Update(body []byte) error {
 		e.Admin = input.Admin
 	}
 
+	if input.MFA != nil {
+		e.MFA = Bool(*input.MFA)
+		if *input.MFA {
+			secret, err := generateMFASecret()
+			if err != nil {
+				return fmt.Errorf(`{"error": "%s"}`, err.Error())
+			}
+			e.MFASecret = secret
+		} else {
+			e.MFASecret = ""
+			e.MFASalt = ""
+		}
+		e.Save()
+	}
+
 	if input.Password != "" {
 		e.Password = input.Password
 		e.Save()
@@ -170,7 +189,33 @@ func (e *Entity) Save() error {
 		e.Password = base64.StdEncoding.EncodeToString(hash)
 	}
 
+	if e.MFASecret != "" {
+		salt := make([]byte, SaltSize)
+		_, err := rand.Read(salt)
+		if err != nil {
+			return fmt.Errorf(`{"error": "%s"}`, err.Error())
+		}
+
+		hash, err := scrypt.Key([]byte(e.MFASecret), salt, 16384, 8, 1, HashSize)
+		if err != nil {
+			return fmt.Errorf(`{"error": "%s"}`, err.Error())
+		}
+
+		e.MFASalt = base64.StdEncoding.EncodeToString(salt)
+		e.MFASecret = base64.StdEncoding.EncodeToString(hash)
+	}
+
 	db.Save(&e)
 
 	return nil
+}
+
+func generateMFASecret() (string, error) {
+	secret := make([]byte, 10)
+	_, err := rand.Read(secret)
+	if err != nil {
+		return "", err
+	}
+
+	return base32.StdEncoding.EncodeToString(secret), nil
 }
