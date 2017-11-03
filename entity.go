@@ -38,7 +38,6 @@ type Entity struct {
 	Admin     *bool  `json:"admin"`
 	MFA       *bool  `json:"mfa"`
 	MFASecret string `json:"mfa_secret"`
-	MFASalt   string `json:"mfa_salt"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt *time.Time `json:"-" sql:"index"`
@@ -131,8 +130,6 @@ func (e *Entity) LoadFromInputOrFail(msg *nats.Msg, h *natsdb.Handler) bool {
 func (e *Entity) Update(body []byte) error {
 	input := Entity{}
 	json.Unmarshal(body, &input)
-	e.GroupID = input.GroupID
-	e.Username = input.Username
 
 	if input.Admin != nil {
 		e.Admin = input.Admin
@@ -141,24 +138,23 @@ func (e *Entity) Update(body []byte) error {
 	if input.MFA != nil {
 		e.MFA = Bool(*input.MFA)
 		if *input.MFA {
-			secret, err := generateMFASecret()
+			e.MFASecret, err = generateMFASecret()
 			if err != nil {
 				return fmt.Errorf(`{"error": "%s"}`, err.Error())
 			}
-			e.MFASecret = secret
 		} else {
 			e.MFASecret = ""
-			e.MFASalt = ""
 		}
-		e.Save()
 	}
 
 	if input.Password != "" {
-		e.Password = input.Password
-		e.Save()
-	} else {
-		db.Save(e)
+		e.Password, e.Salt, err = hash(input.Password)
+		if err != nil {
+			return fmt.Errorf(`{"error": "%s"}`, err.Error())
+		}
 	}
+
+	e.Save()
 
 	return nil
 }
@@ -172,42 +168,28 @@ func (e *Entity) Delete() error {
 
 // Save : Persists current entity on database
 func (e *Entity) Save() error {
-	salt := make([]byte, SaltSize)
-	_, err := io.ReadFull(rand.Reader, salt)
-	if err != nil {
-		return fmt.Errorf(`{"error": "%s"}`, err.Error())
-	}
-
-	if e.Password != "" {
-		hash, err := scrypt.Key([]byte(e.Password), salt, 16384, 8, 1, HashSize)
-		if err != nil {
-			return fmt.Errorf(`{"error": "%s"}`, err.Error())
-		}
-
-		// Create a base64 string of the binary salt and hash for storage
-		e.Salt = base64.StdEncoding.EncodeToString(salt)
-		e.Password = base64.StdEncoding.EncodeToString(hash)
-	}
-
-	if e.MFASecret != "" {
-		salt := make([]byte, SaltSize)
-		_, err := rand.Read(salt)
-		if err != nil {
-			return fmt.Errorf(`{"error": "%s"}`, err.Error())
-		}
-
-		hash, err := scrypt.Key([]byte(e.MFASecret), salt, 16384, 8, 1, HashSize)
-		if err != nil {
-			return fmt.Errorf(`{"error": "%s"}`, err.Error())
-		}
-
-		e.MFASalt = base64.StdEncoding.EncodeToString(salt)
-		e.MFASecret = base64.StdEncoding.EncodeToString(hash)
-	}
-
 	db.Save(&e)
 
 	return nil
+}
+
+func hash(s string) (string, string, error) {
+	salt := make([]byte, SaltSize)
+	_, err := io.ReadFull(rand.Reader, salt)
+	if err != nil {
+		return "", "", fmt.Errorf(`{"error": "%s"}`, err.Error())
+	}
+
+	hash, err := scrypt.Key([]byte(s), salt, 16384, 8, 1, HashSize)
+	if err != nil {
+		return "", "", fmt.Errorf(`{"error": "%s"}`, err.Error())
+	}
+
+	// Create a base64 string of the binary salt and hash for storage
+	base64Salt := base64.StdEncoding.EncodeToString(salt)
+	base64Hash := base64.StdEncoding.EncodeToString(hash)
+
+	return base64Hash, base64Salt, nil
 }
 
 func generateMFASecret() (string, error) {

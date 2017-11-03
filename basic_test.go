@@ -149,7 +149,6 @@ func TestGetHandler(t *testing.T) {
 
 					So(*stored.MFA, ShouldBeTrue)
 					So(stored.MFASecret, ShouldNotBeBlank)
-					So(stored.MFASalt, ShouldNotBeBlank)
 				})
 			})
 			Convey("When the MFA field is changed from true to false", func() {
@@ -164,7 +163,6 @@ func TestGetHandler(t *testing.T) {
 
 					So(*stored.MFA, ShouldBeFalse)
 					So(stored.MFASecret, ShouldBeBlank)
-					So(stored.MFASalt, ShouldBeBlank)
 				})
 			})
 
