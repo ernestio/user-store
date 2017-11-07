@@ -154,7 +154,7 @@ func (e *Entity) Update(body []byte) error {
 		}
 	}
 
-	e.Save()
+	db.Save(&e)
 
 	return nil
 }
@@ -168,6 +168,13 @@ func (e *Entity) Delete() error {
 
 // Save : Persists current entity on database
 func (e *Entity) Save() error {
+	if e.Password != "" {
+		e.Password, e.Salt, err = hash(e.Password)
+		if err != nil {
+			return fmt.Errorf(`{"error": "%s"}`, err.Error())
+		}
+	}
+
 	db.Save(&e)
 
 	return nil
