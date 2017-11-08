@@ -182,6 +182,8 @@ func (e *Entity) Save() error {
 	return nil
 }
 
+// hash creates a hash of the given string using a randomly generated salt.
+// It returns both the hash and salt as base64 encoded strings.
 func hash(s string) (string, string, error) {
 	salt := make([]byte, SaltSize)
 	_, err := io.ReadFull(rand.Reader, salt)
@@ -201,6 +203,7 @@ func hash(s string) (string, string, error) {
 	return base64Hash, base64Salt, nil
 }
 
+// generateMFASecret creates a random TOTP compatible secret key
 func generateMFASecret() (string, error) {
 	secret := make([]byte, 10)
 	_, err := rand.Read(secret)

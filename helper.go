@@ -4,6 +4,7 @@
 
 package main
 
+// Bool returns the memory address of a boolean
 func Bool(b bool) *bool {
 	return &b
 }
