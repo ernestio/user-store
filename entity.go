@@ -109,6 +109,8 @@ func (e *Entity) LoadFromInput(msg []byte) bool {
 	e.Salt = stored.Salt
 	e.Admin = stored.Admin
 	e.Type = stored.Type
+	e.MFA = stored.MFA
+	e.MFASecret = stored.MFASecret
 
 	return true
 }
