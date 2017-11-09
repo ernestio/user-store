@@ -120,17 +120,15 @@ func TestGetHandler(t *testing.T) {
 			db.First(&e)
 			id := fmt.Sprint(e.ID)
 			Convey("Then we should receive an updated entity", func() {
-				msg, err := n.Request("user.set", []byte(`{"id": `+id+`, "username":"fred", "password":"supu"}`), time.Second)
+				msg, err := n.Request("user.set", []byte(`{"id": `+id+`, "password":"supu"}`), time.Second)
 				output := Entity{}
 				output.LoadFromInput(msg.Data)
-				So(output.ID, ShouldNotBeNil)
-				So(output.Username, ShouldEqual, "fred")
+				So(output.ID, ShouldEqual, e.ID)
 				pwd := output.Password
 				So(err, ShouldBeNil)
 
 				stored := Entity{}
 				db.First(&stored, output.ID)
-				So(stored.Username, ShouldEqual, "fred")
 				So(stored.Password, ShouldEqual, pwd)
 
 				n.Request("user.set", []byte(`{"id": `+id+`, "password":""}`), time.Second)
