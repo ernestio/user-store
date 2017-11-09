@@ -132,7 +132,6 @@ func (e *Entity) Update(body []byte) error {
 
 	if input.Admin != nil {
 		e.Admin = input.Admin
-		e.Save()
 	}
 
 	if input.Password != "" {
