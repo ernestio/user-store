@@ -6,6 +6,7 @@ package main
 
 import (
 	"crypto/rand"
+	"encoding/base32"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -35,6 +36,8 @@ type Entity struct {
 	Email     string `json:"email"`
 	Salt      string `json:"salt"`
 	Admin     *bool  `json:"admin"`
+	MFA       *bool  `json:"mfa"`
+	MFASecret string `json:"mfa_secret"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt *time.Time `json:"-" sql:"index"`
@@ -106,6 +109,8 @@ func (e *Entity) LoadFromInput(msg []byte) bool {
 	e.Salt = stored.Salt
 	e.Admin = stored.Admin
 	e.Type = stored.Type
+	e.MFA = stored.MFA
+	e.MFASecret = stored.MFASecret
 
 	return true
 }
@@ -127,19 +132,31 @@ func (e *Entity) LoadFromInputOrFail(msg *nats.Msg, h *natsdb.Handler) bool {
 func (e *Entity) Update(body []byte) error {
 	input := Entity{}
 	json.Unmarshal(body, &input)
-	e.GroupID = input.GroupID
-	e.Username = input.Username
 
 	if input.Admin != nil {
 		e.Admin = input.Admin
 	}
 
-	if input.Password != "" {
-		e.Password = input.Password
-		e.Save()
-	} else {
-		db.Save(e)
+	if input.MFA != nil {
+		e.MFA = Bool(*input.MFA)
+		if *input.MFA {
+			e.MFASecret, err = generateMFASecret()
+			if err != nil {
+				return fmt.Errorf(`{"error": "%s"}`, err.Error())
+			}
+		} else {
+			e.MFASecret = ""
+		}
 	}
+
+	if input.Password != "" {
+		e.Password, e.Salt, err = hash(input.Password)
+		if err != nil {
+			return fmt.Errorf(`{"error": "%s"}`, err.Error())
+		}
+	}
+
+	db.Save(&e)
 
 	return nil
 }
@@ -153,24 +170,46 @@ func (e *Entity) Delete() error {
 
 // Save : Persists current entity on database
 func (e *Entity) Save() error {
-	salt := make([]byte, SaltSize)
-	_, err := io.ReadFull(rand.Reader, salt)
-	if err != nil {
-		return fmt.Errorf(`{"error": "%s"}`, err.Error())
-	}
-
 	if e.Password != "" {
-		hash, err := scrypt.Key([]byte(e.Password), salt, 16384, 8, 1, HashSize)
+		e.Password, e.Salt, err = hash(e.Password)
 		if err != nil {
 			return fmt.Errorf(`{"error": "%s"}`, err.Error())
 		}
-
-		// Create a base64 string of the binary salt and hash for storage
-		e.Salt = base64.StdEncoding.EncodeToString(salt)
-		e.Password = base64.StdEncoding.EncodeToString(hash)
 	}
 
 	db.Save(&e)
 
 	return nil
+}
+
+// hash creates a hash of the given string using a randomly generated salt.
+// It returns both the hash and salt as base64 encoded strings.
+func hash(s string) (string, string, error) {
+	salt := make([]byte, SaltSize)
+	_, err := io.ReadFull(rand.Reader, salt)
+	if err != nil {
+		return "", "", fmt.Errorf(`{"error": "%s"}`, err.Error())
+	}
+
+	hash, err := scrypt.Key([]byte(s), salt, 16384, 8, 1, HashSize)
+	if err != nil {
+		return "", "", fmt.Errorf(`{"error": "%s"}`, err.Error())
+	}
+
+	// Create a base64 string of the binary salt and hash for storage
+	base64Salt := base64.StdEncoding.EncodeToString(salt)
+	base64Hash := base64.StdEncoding.EncodeToString(hash)
+
+	return base64Hash, base64Salt, nil
+}
+
+// generateMFASecret creates a random TOTP compatible secret key
+func generateMFASecret() (string, error) {
+	secret := make([]byte, 10)
+	_, err := rand.Read(secret)
+	if err != nil {
+		return "", err
+	}
+
+	return base32.StdEncoding.EncodeToString(secret), nil
 }

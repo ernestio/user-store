@@ -120,23 +120,50 @@ func TestGetHandler(t *testing.T) {
 			db.First(&e)
 			id := fmt.Sprint(e.ID)
 			Convey("Then we should receive an updated entity", func() {
-				msg, err := n.Request("user.set", []byte(`{"id": `+id+`, "username":"fred", "password":"supu"}`), time.Second)
+				msg, err := n.Request("user.set", []byte(`{"id": `+id+`, "password":"supu"}`), time.Second)
 				output := Entity{}
 				output.LoadFromInput(msg.Data)
-				So(output.ID, ShouldNotBeNil)
-				So(output.Username, ShouldEqual, "fred")
+				So(output.ID, ShouldEqual, e.ID)
 				pwd := output.Password
 				So(err, ShouldBeNil)
 
 				stored := Entity{}
 				db.First(&stored, output.ID)
-				So(stored.Username, ShouldEqual, "fred")
 				So(stored.Password, ShouldEqual, pwd)
 
 				n.Request("user.set", []byte(`{"id": `+id+`, "password":""}`), time.Second)
 				db.First(&stored, output.ID)
 				So(stored.Password, ShouldEqual, pwd)
 			})
+			Convey("When the MFA field is changed from false to true", func() {
+				msg, err := n.Request("user.set", []byte(`{"id": `+id+`, "username":"fred", "password":"supu", "mfa": true}`), time.Second)
+				So(err, ShouldBeNil)
+				Convey("Then I should see a value in the MFASecret & MFASalt fields", func() {
+					output := Entity{}
+					output.LoadFromInput(msg.Data)
+
+					stored := Entity{}
+					db.First(&stored, output.ID)
+
+					So(*stored.MFA, ShouldBeTrue)
+					So(stored.MFASecret, ShouldNotBeBlank)
+				})
+			})
+			Convey("When the MFA field is changed from true to false", func() {
+				msg, err := n.Request("user.set", []byte(`{"id": `+id+`, "username":"fred", "password":"supu", "mfa": false}`), time.Second)
+				So(err, ShouldBeNil)
+				Convey("Then I should see a no value in the MFASecret & MFASalt fields", func() {
+					output := Entity{}
+					output.LoadFromInput(msg.Data)
+
+					stored := Entity{}
+					db.First(&stored, output.ID)
+
+					So(*stored.MFA, ShouldBeFalse)
+					So(stored.MFASecret, ShouldBeBlank)
+				})
+			})
+
 		})
 	})
 
