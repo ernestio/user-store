@@ -170,6 +170,17 @@ func (e *Entity) Delete() error {
 
 // Save : Persists current entity on database
 func (e *Entity) Save() error {
+	if e.MFA != nil {
+		if *e.MFA {
+			e.MFASecret, err = generateMFASecret()
+			if err != nil {
+				return fmt.Errorf(`{"error": "%s"}`, err.Error())
+			}
+		} else {
+			e.MFASecret = ""
+		}
+	}
+
 	if e.Password != "" {
 		e.Password, e.Salt, err = hash(e.Password)
 		if err != nil {
