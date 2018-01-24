@@ -4,21 +4,17 @@ install:
 build:
 	go build -v ./...
 
-deps: dev-deps
-	go get github.com/jinzhu/gorm
-	go get github.com/nats-io/nats
-	go get github.com/lib/pq
-	go get github.com/r3labs/natsdb
-	go get golang.org/x/crypto/scrypt
-	go get github.com/ernestio/ernest-config-client
+deps:
+	go get -u github.com/golang/dep/cmd/dep
+	dep ensure
 
-dev-deps:
-	go get github.com/golang/lint/golint
-	go get github.com/smartystreets/goconvey/convey
+dev-deps: deps
+	go get github.com/smartystreets/goconvey
+	go get github.com/alecthomas/gometalinter
+	gometalinter --install
 
 test:
-	go test -v ./...
+	go test --cover -v $(go list ./... | grep -v /vendor/)
 
 lint:
-	golint ./...
-	go vet ./...
+	gometalinter --config .linter.conf

@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"time"
 
 	"golang.org/x/crypto/scrypt"
@@ -75,7 +76,9 @@ func (e *Entity) Find() []interface{} {
 
 // MapInput : maps the input []byte on the current entity
 func (e *Entity) MapInput(body []byte) {
-	json.Unmarshal(body, &e)
+	if err = json.Unmarshal(body, &e); err != nil {
+		log.Println(err.Error())
+	}
 }
 
 // HasID : determines if the current entity has an id or not
@@ -131,7 +134,9 @@ func (e *Entity) LoadFromInputOrFail(msg *nats.Msg, h *natsdb.Handler) bool {
 // Update : It will update the current entity with the input []byte
 func (e *Entity) Update(body []byte) error {
 	input := Entity{}
-	json.Unmarshal(body, &input)
+	if err := json.Unmarshal(body, &input); err != nil {
+		log.Println(err.Error())
+	}
 
 	if input.Admin != nil {
 		e.Admin = input.Admin
