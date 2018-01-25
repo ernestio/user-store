@@ -30,10 +30,19 @@ func startHandler() {
 		},
 	}
 
-	n.Subscribe("user.get", handler.Get)
-	n.Subscribe("user.del", handler.Del)
-	n.Subscribe("user.set", handler.Set)
-	n.Subscribe("user.find", handler.Find)
+	handlers := map[string]nats.MsgHandler{
+		"user.get":  handler.Get,
+		"user.del":  handler.Del,
+		"user.set":  handler.Set,
+		"user.find": handler.Find,
+	}
+
+	for k, v := range handlers {
+		if _, err = n.Subscribe(k, v); err != nil {
+			panic(err)
+		}
+	}
+
 }
 
 func main() {
