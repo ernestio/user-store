@@ -39,6 +39,7 @@ type Entity struct {
 	Admin     *bool  `json:"admin"`
 	MFA       *bool  `json:"mfa"`
 	MFASecret string `json:"mfa_secret"`
+	Disabled  *bool  `json:"disabled"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt *time.Time `json:"-" sql:"index"`
@@ -114,6 +115,7 @@ func (e *Entity) LoadFromInput(msg []byte) bool {
 	e.Type = stored.Type
 	e.MFA = stored.MFA
 	e.MFASecret = stored.MFASecret
+	e.Disabled = stored.Disabled
 
 	return true
 }
@@ -152,6 +154,10 @@ func (e *Entity) Update(body []byte) error {
 		} else {
 			e.MFASecret = ""
 		}
+	}
+
+	if input.Disabled != nil {
+		e.Disabled = input.Disabled
 	}
 
 	if input.Password != "" {
