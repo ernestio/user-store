@@ -5,7 +5,7 @@
   branch = "master"
   name = "github.com/ernestio/ernest-config-client"
   packages = ["."]
-  revision = "d767474ae0ea944ec7ee6b35d2204d2439ee0fae"
+  revision = "3ae64ad7b8e5b19b31ff8a8e0bedcf807989e42e"
 
 [[projects]]
   branch = "master"
@@ -47,15 +47,10 @@
 [[projects]]
   name = "github.com/nats-io/go-nats"
   packages = [
+    ".",
     "encoders/builtin",
     "util"
   ]
-  revision = "d66cb54e6b7bdd93f0b28afc8450d84c780dfb68"
-  version = "v1.4.0"
-
-[[projects]]
-  name = "github.com/nats-io/nats"
-  packages = ["."]
   revision = "d66cb54e6b7bdd93f0b28afc8450d84c780dfb68"
   version = "v1.4.0"
 
@@ -69,13 +64,13 @@
   branch = "master"
   name = "github.com/r3labs/akira"
   packages = ["."]
-  revision = "a3fae57dfd96d0ff20e64aa618f09a73ffea6ec4"
+  revision = "8754167cb7b314671eb1e2abf2e9465f2e3d5ad4"
 
 [[projects]]
   branch = "master"
   name = "github.com/r3labs/natsdb"
   packages = ["."]
-  revision = "0ee59282e9ee07c7be76958844cd10b256060dae"
+  revision = "bdbb5c758f58411867634adcb638b77f4221790f"
 
 [[projects]]
   name = "github.com/smartystreets/assertions"
@@ -127,6 +122,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "cc3041bde24fa00656f40eb831771ed5be220eea9709d52f04f1f0bd0b708971"
+  inputs-digest = "348896d51a4bd8757a3162251471119930d60dae737044231468f1dd155ebf45"
   solver-name = "gps-cdcl"
   solver-version = 1
